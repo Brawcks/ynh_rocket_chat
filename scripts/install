@@ -99,17 +99,23 @@ ynh_app_setting_set $app port $port
 ###		- And the section "UPGRADE DEPENDENCIES" in the upgrade script
 
 ynh_print_info "Installing dependencies ..."
+pushd .
 ynh_install_app_dependencies dirmngr
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+ynh_print_info "Update sources ..."
 echo "deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/3.6 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
 sudo apt-get update && sudo apt-get install -y curl && curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
+ynh_print_info "Installing Mongo and Node JS ..."
 ynh_install_app_dependencies build-essential mongodb-org nodejs graphicsmagick
 sudo npm install -g inherits n && sudo n 8.11.3
+ynh_print_info "Download last rocket chat release ..."
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
+ynh_print_info "Unpack rocket chat ..."
 tar -xzf /tmp/rocket.chat.tgz -C /tmp
 cd /tmp/bundle/programs/server && npm install
 mkdir -p $final_path
-sudo mv /tmp/bundle $final_path
+sudo mv /tmp/bundle/. $final_path
+popd
 
 #=================================================
 # NGINX CONFIGURATION
@@ -127,13 +133,12 @@ ynh_add_nginx_config
 
 # Create a system user
 sudo useradd -M $app && sudo usermod -L $app
-sudo chown -R $app:$app $final_path
 
 #=================================================
 # SPECIFIC SETUP
 #=================================================
 
-echo -e "[Unit]\nDescription=The Rocket.Chat server\nAfter=network.target remote-fs.target nss-lookup.target nginx.target mongod.target\n[Service]\nExecStart=/usr/local/bin/node $final_path/main.js\nStandardOutput=syslog\nStandardError=syslog\nSyslogIdentifier=$app\nUser=$app\nEnvironment=MONGO_URL=mongodb://localhost:27017/$app ROOT_URL=http://${domain}${path_url}:${port}/ PORT=${port}\n[Install]\nWantedBy=multi-user.target" | sudo tee /lib/systemd/system/rocketchat.service
+echo -e "[Unit]\nDescription=The Rocket.Chat server\nAfter=network.target remote-fs.target nss-lookup.target nginx.target mongod.target\n[Service]\nExecStart=/usr/local/bin/node $final_path/bundle/main.js\nStandardOutput=syslog\nStandardError=syslog\nSyslogIdentifier=$app\nUser=$app\nEnvironment=MONGO_URL=mongodb://localhost:27017/$app ROOT_URL=https://${domain}:${port}/ PORT=${port}\n[Install]\nWantedBy=multi-user.target" | sudo tee /lib/systemd/system/rocketchat.service
 sudo systemctl enable mongod && sudo systemctl start mongod
 sudo systemctl enable rocketchat && sudo systemctl start rocketchat
 
@@ -150,7 +155,7 @@ sudo systemctl enable rocketchat && sudo systemctl start rocketchat
 ### that really need such authorization.
 
 # Set permissions to app files
-chown -R root: $final_path
+chown -R $app:$app $final_path
 
 #=================================================
 # SETUP SSOWAT
