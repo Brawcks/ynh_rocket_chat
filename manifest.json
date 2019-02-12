@@ -15,9 +15,7 @@
         "url": "https://tiktakweb.fr"
     },
     "requirements": {
-        "yunohost": ">= 3.0.0",
-        "mongodb-org": ">= 3.6",
-        "nodejs": ">= 8.11.3"
+        "yunohost": ">= 3.0.0"
     },
     "multi_instance": false,
     "services": [

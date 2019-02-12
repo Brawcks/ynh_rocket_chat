@@ -108,6 +108,7 @@ sudo npm install -g inherits n && sudo n 8.11.3
 curl -L https://releases.rocket.chat/latest/download -o /tmp/rocket.chat.tgz
 tar -xzf /tmp/rocket.chat.tgz -C /tmp
 cd /tmp/bundle/programs/server && npm install
+mkdir $final_path
 sudo mv /tmp/bundle $final_path
 
 #=================================================
